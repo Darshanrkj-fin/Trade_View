@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: tradewise-ai-terminal
+    runtime: python
+    buildCommand: pip install -r requirements-deploy.txt
+    startCommand: waitress-serve --host=0.0.0.0 --port=$PORT app:app
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: TRADEWISE_MARKET_CACHE_TTL
+        value: "60"
+      - key: TRADEWISE_ANALYSIS_CACHE_TTL
+        value: "180"
+      - key: TRADEWISE_NEWS_CACHE_TTL
+        value: "120"

@@ -1,0 +1,35 @@
+# import json
+# Core
+numpy>=1.19.0
+pandas>=1.0.0
+
+# Stock Data
+yfinance>=0.2.0
+
+# NLP / Sentiment
+nltk>=3.6.0
+
+# Web Scraping
+beautifulsoup4>=4.9.0
+requests>=2.25.0
+
+# Technical Indicators
+ta>=0.10.0
+
+# Visualization
+plotly>=5.0.0
+Flask>=3.0.0
+waitress>=3.0.0
+
+# Serialization
+joblib
+
+# ML (scikit-learn)
+scikit-learn>=0.24.0
+
+# ── Optional (install manually if your Python version supports them) ──
+tensorflow>=2.0.0      # For LSTM model — not available on Python 3.13+
+transformers>=4.0.0    # For BERT sentiment — requires torch
+torch                  # For transformers
+matplotlib
+seaborn

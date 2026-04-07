@@ -1,0 +1,13 @@
+{
+  "forecast_days": 30,
+  "sequence_length": 60,
+  "chart_style": "dark",
+  "volume_overlay": true,
+  "nifty50_enabled": true,
+  "prediction_range_percent": 20,
+  "impact_score_threshold": 55,
+  "max_stocks_to_analyze": 10,
+  "news_sources": ["livemint", "google_news"],
+  "use_ml_model": false,
+  "newsapi_key": ""
+}

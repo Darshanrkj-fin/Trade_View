@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TradeWise AI Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/styles.css">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+  <div class="terminal-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand-kicker">Quant Terminal</div>
+        <div class="brand-name">TradeWise AI</div>
+      </div>
+      <div class="market-strip" id="market-strip">
+        <span class="market-chip">Loading market status...</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="top-action">Terminal Active</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar">
+        <div class="nav-header">Modes</div>
+        <button class="nav-btn active" data-view="analysis">Analysis</button>
+        <button class="nav-btn" data-view="news">AI News</button>
+        <button class="nav-btn" data-view="portfolio">Portfolio</button>
+        <button class="nav-btn" data-view="about">About</button>
+      </aside>
+
+      <main class="main-stage">
+        <section class="view active" id="view-analysis">
+          <div class="panel-grid analysis-grid">
+            <section class="panel panel-launch">
+              <div class="panel-title">Launch Console</div>
+              <div class="launch-grid">
+                <div class="feed-card">
+                  <h3>Public Demo Terminal</h3>
+                  <p>TradeWise AI is a research and educational trading terminal for exploring market data, news signals, and portfolio scenarios.</p>
+                  <p>It is not a live execution engine or investment-advice platform.</p>
+                </div>
+                <div class="launch-actions">
+                  <button id="welcome-sample-analysis" class="primary-btn" type="button">Try Sample Analysis</button>
+                  <button id="welcome-sample-news" class="ghost-btn" type="button">Try News Scan</button>
+                  <button id="welcome-sample-portfolio" class="ghost-btn" type="button">Try Portfolio Demo</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel panel-form">
+              <div class="panel-title">Manual Analysis</div>
+              <form id="analysis-form" class="terminal-form">
+                <label>
+                  <span>Ticker</span>
+                  <input type="text" id="analysis-ticker" value="RELIANCE.NS" placeholder="RELIANCE.NS">
+                </label>
+                <label>
+                  <span>Forecast Window</span>
+                  <select id="analysis-term"></select>
+                </label>
+                <button type="submit" class="primary-btn">Run Deep Scan</button>
+              </form>
+              <div class="button-row">
+                <button id="analysis-export-btn" class="ghost-btn" type="button">Export JSON</button>
+              </div>
+            </section>
+
+            <section class="panel metrics-panel">
+              <div class="panel-title">Market Brief</div>
+              <div class="metric-stack" id="analysis-metrics"></div>
+              <div class="panel-status" id="analysis-status"></div>
+            </section>
+
+            <section class="panel hero-panel">
+              <div class="panel-title">Forecast Matrix</div>
+              <div id="analysis-chart" class="chart-host"></div>
+            </section>
+
+            <section class="panel hero-panel">
+              <div class="panel-title">Price + Volume Context</div>
+              <div id="analysis-context-chart" class="chart-host"></div>
+            </section>
+
+            <section class="panel hero-panel">
+              <div class="panel-title">Forecast Delta Ladder</div>
+              <div id="analysis-delta-chart" class="chart-host"></div>
+            </section>
+
+            <section class="panel panel-list">
+              <div class="panel-title">Technical Signals</div>
+              <div id="analysis-indicators" class="signal-list"></div>
+            </section>
+
+            <section class="panel panel-list">
+              <div class="panel-title">Backtest Readout</div>
+              <div id="analysis-backtests" class="signal-list"></div>
+            </section>
+
+            <section class="panel panel-list">
+              <div class="panel-title">Calibration Readout</div>
+              <div id="analysis-benchmarks" class="signal-list"></div>
+              <div id="analysis-benchmark-chart" class="chart-host compact-chart"></div>
+            </section>
+
+            <section class="panel panel-list">
+              <div class="panel-title">Signal Snapshot</div>
+              <div id="analysis-signal-chart" class="chart-host compact-chart"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-news">
+          <div class="panel-grid news-grid">
+            <section class="panel panel-form">
+              <div class="panel-title">News Command</div>
+              <button id="news-scan-btn" class="primary-btn full-btn">Scan News & Generate Recommendations</button>
+              <div class="button-row">
+                <button id="news-export-json-btn" class="ghost-btn" type="button">Export JSON</button>
+                <button id="news-export-csv-btn" class="ghost-btn" type="button">Export CSV</button>
+              </div>
+              <div class="summary-pills" id="news-summary"></div>
+              <div class="panel-status" id="news-status"></div>
+            </section>
+
+            <section class="panel hero-panel">
+              <div class="panel-title">Recommendation Spectrum</div>
+              <div id="news-chart" class="chart-host"></div>
+            </section>
+
+            <section class="panel panel-table">
+              <div class="panel-title">Recommendation Board</div>
+              <div id="news-table" class="table-host"></div>
+            </section>
+
+            <section class="panel panel-feed">
+              <div class="panel-title">Article Feed</div>
+              <div id="news-feed" class="feed-host"></div>
+            </section>
+
+            <section class="panel panel-list">
+              <div class="panel-title">Signal Performance</div>
+              <div id="news-performance" class="signal-list"></div>
+              <div id="news-performance-chart" class="chart-host compact-chart"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-portfolio">
+          <div class="panel-grid portfolio-grid">
+            <section class="panel panel-form">
+              <div class="panel-title">Portfolio Builder</div>
+              <form id="holding-form" class="terminal-form compact-form">
+                <label>
+                  <span>Ticker</span>
+                  <input type="text" id="holding-ticker" value="RELIANCE.NS">
+                </label>
+                <label>
+                  <span>Qty</span>
+                  <input type="number" id="holding-qty" value="100" min="1">
+                </label>
+                <label>
+                  <span>Buy Price</span>
+                  <input type="number" id="holding-buy-price" value="2500" min="0.01" step="0.01">
+                </label>
+                <button type="submit" class="primary-btn">Add Holding</button>
+              </form>
+              <div class="button-row">
+                <button id="portfolio-clear-btn" class="ghost-btn">Clear</button>
+                <button id="portfolio-optimize-btn" class="primary-btn">Optimize Portfolio</button>
+              </div>
+              <div class="button-row">
+                <button id="portfolio-export-btn" class="ghost-btn" type="button">Export JSON</button>
+              </div>
+            </section>
+
+            <section class="panel panel-table">
+              <div class="panel-title">Holdings Grid</div>
+              <div id="portfolio-holdings" class="table-host"></div>
+            </section>
+
+            <section class="panel hero-panel">
+              <div class="panel-title">Weight Shift</div>
+              <div id="portfolio-weights-chart" class="chart-host"></div>
+            </section>
+
+            <section class="panel hero-panel">
+              <div class="panel-title">Allocation Matrix</div>
+              <div id="portfolio-allocation-chart" class="chart-host"></div>
+            </section>
+
+            <section class="panel hero-panel">
+              <div class="panel-title">Efficient Frontier</div>
+              <div id="portfolio-frontier-chart" class="chart-host"></div>
+            </section>
+
+            <section class="panel hero-panel">
+              <div class="panel-title">Ranking Benchmark</div>
+              <div id="portfolio-ranking-benchmark-chart" class="chart-host"></div>
+            </section>
+
+            <section class="panel panel-list">
+              <div class="panel-title">Portfolio Metrics</div>
+              <div id="portfolio-metrics" class="signal-list"></div>
+            </section>
+
+            <section class="panel panel-list">
+              <div class="panel-title">Trade Suggestions</div>
+              <div id="portfolio-suggestions" class="signal-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-about">
+          <div class="panel-grid about-grid">
+            <section class="panel panel-feed">
+              <div class="panel-title">System Notes</div>
+              <div class="feed-card">
+                <h3>TradeWise AI Terminal</h3>
+                <p>This interface replaces the retired Streamlit UI with a Flask-powered trading terminal shell.</p>
+                <p>The analytics engine still uses the existing Python modules for price history, sentiment, forecasting, backtests, and portfolio optimization.</p>
+              </div>
+            </section>
+            <section class="panel panel-feed">
+              <div class="panel-title">Diagnostics</div>
+              <div id="diagnostics-feed" class="feed-host">
+                <div class="empty-state">Loading diagnostics...</div>
+              </div>
+            </section>
+            <section class="panel panel-feed">
+              <div class="panel-title">Report History</div>
+              <div class="terminal-form compact-form">
+                <label>
+                  <span>Search</span>
+                  <input type="text" id="report-search" placeholder="Ticker, title, or keyword">
+                </label>
+                <label>
+                  <span>Type</span>
+                  <select id="report-type-filter">
+                    <option value="all">All Reports</option>
+                    <option value="analysis">Analysis</option>
+                    <option value="news">News</option>
+                    <option value="news_csv">News CSV</option>
+                    <option value="portfolio">Portfolio</option>
+                  </select>
+                </label>
+              </div>
+              <div id="report-history-feed" class="feed-host">
+                <div class="empty-state">Loading reports...</div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="console-bar">
+      <div class="console-prompt">console://trading-agent</div>
+      <div class="console-log" id="console-log">System initialized. Waiting for command...</div>
+    </footer>
+    <div class="site-disclaimer">TradeWise AI can make mistakes. For research and educational use only.</div>
+  </div>
+
+  <div id="toast-host" class="toast-host" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="static/js/app.js"></script>
+</body>
+</html>
