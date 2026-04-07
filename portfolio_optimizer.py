@@ -15,14 +15,26 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# TensorFlow is optional. Portfolio ranking currently uses a heuristic score.
-try:
-    import tensorflow as tf
-    from tensorflow.keras import layers, models
-    TF_AVAILABLE = True
-except ImportError:
-    TF_AVAILABLE = False
-    logger.warning("TensorFlow not available. Portfolio ranking will use the heuristic momentum scorer.")
+# TensorFlow is optional and loaded lazily.
+_TF_LOADED = False
+_TF_AVAILABLE = False
+
+def check_tensorflow():
+    """Lazily load TensorFlow only when needed."""
+    global _TF_LOADED, _TF_AVAILABLE
+    if _TF_LOADED:
+        return _TF_AVAILABLE
+    
+    try:
+        import tensorflow as tf
+        _TF_AVAILABLE = True
+        logger.info("TensorFlow loaded — Deep RankNet functionality enabled.")
+    except ImportError:
+        _TF_AVAILABLE = False
+        logger.warning("TensorFlow not available. Portfolio ranking will use the heuristic momentum scorer.")
+    
+    _TF_LOADED = True
+    return _TF_AVAILABLE
 
 
 # ═══════════════════════════════════════════════
@@ -103,7 +115,9 @@ def get_ranknet_scores(tickers, historical_data_dict):
     scores = {}
     feature_context = {}
     
-    if TF_AVAILABLE and len(tickers) > 1:
+    if check_tensorflow() and len(tickers) > 1:
+        import tensorflow as tf
+        from tensorflow.keras import layers, models
         # Placeholder for a future learned scoring network.
         model = models.Sequential([
             layers.Dense(32, activation='relu', input_shape=(5,)),
@@ -594,7 +608,7 @@ def run_portfolio_optimization(portfolio_list):
     'stock_comparison': stock_comparison,
     'portfolio_assumptions': {
         'ranking_method': 'heuristic_momentum',
-        'ranking_model_used': 'tensorflow_placeholder' if TF_AVAILABLE else 'heuristic_only',
+        'ranking_model_used': 'tensorflow_placeholder' if check_tensorflow() else 'heuristic_only',
         'ranking_formula': '0.20*ret_1m + 0.25*ret_3m + 0.20*price_vs_ma50 - 0.15*volatility - 0.20*max_drawdown',
         'optimizer_objective': 'maximize_sharpe_ratio',
         'risk_free_rate': risk_free_rate,

@@ -6,6 +6,28 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# TensorFlow is loaded lazily to speed up app startup
+_TF_LOADED = False
+_TF_AVAILABLE = False
+
+
+def check_tensorflow():
+    """Lazily check if TensorFlow is available and import it."""
+    global _TF_LOADED, _TF_AVAILABLE
+    if _TF_LOADED:
+        return _TF_AVAILABLE
+
+    try:
+        import tensorflow as tf
+        _TF_AVAILABLE = True
+        logger.info("TensorFlow loaded successfully — using LSTM models")
+    except ImportError:
+        _TF_AVAILABLE = False
+        logger.info("TensorFlow not available — using sklearn fallback models")
+    
+    _TF_LOADED = True
+    return _TF_AVAILABLE
+
 
 def confidence_band(confidence):
     """Map a numeric confidence score to a simple user-facing quality band."""
@@ -27,21 +49,13 @@ def build_model_info(engine, label, confidence, is_fallback, fit_score=None, not
         "notes": notes or [],
     }
 
-# Try importing TensorFlow — fall back to sklearn if unavailable
-try:
-    import tensorflow as tf
-    HAS_TENSORFLOW = True
-    logger.info("TensorFlow available — using LSTM model")
-except ImportError:
-    HAS_TENSORFLOW = False
-    logger.info("TensorFlow not available — using sklearn fallback model")
-
 
 def create_model(sequence_length, forecast_days=30):
     """Create an LSTM model for time series prediction (requires TensorFlow)"""
-    if not HAS_TENSORFLOW:
+    if not check_tensorflow():
         raise ImportError("TensorFlow is required for LSTM model")
 
+    import tensorflow as tf
     model = tf.keras.Sequential([
         tf.keras.layers.LSTM(100, return_sequences=True, input_shape=(sequence_length, 1)),
         tf.keras.layers.Dropout(0.2),
@@ -184,10 +198,11 @@ def predict_lstm(data, forecast_days=30, sequence_length=60, model=None, scaler=
     Predict stock prices using LSTM model (TensorFlow) or fallback to sklearn.
     """
     # If TensorFlow is not available, use fallback
-    if not HAS_TENSORFLOW:
+    if not check_tensorflow():
         logger.info("Using sklearn fallback predictor")
         return predict_sklearn_fallback(data, forecast_days, sequence_length)
 
+    import tensorflow as tf
     try:
         data = np.asarray(data, dtype=np.float32)
         if len(data.shape) == 1:
@@ -209,19 +224,17 @@ def predict_lstm(data, forecast_days=30, sequence_length=60, model=None, scaler=
         y_train, y_val = y[:split], y[split:]
 
         if model is None:
-            logger.info("Creating new LSTM model...")
+            logger.info("Creating and training temporary LSTM model...")
             model = create_model(sequence_length, forecast_days)
 
             early_stopping = tf.keras.callbacks.EarlyStopping(
                 monitor='val_loss', patience=10, restore_best_weights=True
             )
 
-            logger.info("Training model...")
             model.fit(
                 X_train, y_train, epochs=100, batch_size=32,
                 validation_data=(X_val, y_val), callbacks=[early_stopping], verbose=0
             )
-            logger.info("Model training completed")
 
         val_predictions = model.predict(X_val, verbose=0)
         metrics = calculate_forecast_metrics(
@@ -280,10 +293,11 @@ def predict_lstm(data, forecast_days=30, sequence_length=60, model=None, scaler=
 
 
 def train_lstm(data, forecast_days=30, sequence_length=60, epochs=100):
-    if not HAS_TENSORFLOW:
+    if not check_tensorflow():
         logger.warning("TensorFlow not available, cannot train LSTM")
         return None, None
 
+    import tensorflow as tf
     try:
         data = np.asarray(data, dtype=np.float32)
         if len(data.shape) == 1:

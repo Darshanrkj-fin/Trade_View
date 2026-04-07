@@ -7,13 +7,31 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Try importing transformers — fall back to VADER if unavailable
-try:
-    from transformers import pipeline as hf_pipeline
-    HAS_TRANSFORMERS = True
-except ImportError:
-    HAS_TRANSFORMERS = False
-    logger.info("transformers not available — using NLTK VADER for sentiment")
+# Transformers is loaded lazily to speed up app startup
+_SENTIMENT_PIPELINE = None
+
+
+def get_sentiment_pipeline():
+    """Lazily load the transformers sentiment pipeline."""
+    global _SENTIMENT_PIPELINE
+    if _SENTIMENT_PIPELINE is not None:
+        return _SENTIMENT_PIPELINE
+
+    try:
+        from transformers import pipeline as hf_pipeline
+        logger.info("Loading transformers sentiment pipeline (DistilBERT)...")
+        _SENTIMENT_PIPELINE = hf_pipeline(
+            "sentiment-analysis",
+            model="distilbert-base-uncased-finetuned-sst-2-english",
+            tokenizer="distilbert-base-uncased-finetuned-sst-2-english"
+        )
+        return _SENTIMENT_PIPELINE
+    except ImportError:
+        logger.info("transformers not available — using NLTK VADER for sentiment")
+        return None
+    except Exception as e:
+        logger.warning(f"Failed to load transformers: {e}")
+        return None
 
 
 def analyze_sentiment(titles):
@@ -24,14 +42,10 @@ def analyze_sentiment(titles):
     if not titles:
         return "Neutral"
 
-    if HAS_TRANSFORMERS:
+    pipeline = get_sentiment_pipeline()
+    if pipeline is not None:
         try:
-            classifier = hf_pipeline(
-                "sentiment-analysis",
-                model="distilbert-base-uncased-finetuned-sst-2-english",
-                tokenizer="distilbert-base-uncased-finetuned-sst-2-english"
-            )
-            sentiments = [classifier(title)[0]['label'] for title in titles[:5]]
+            sentiments = [pipeline(title)[0]['label'] for title in titles[:5]]
             positive = sum(1 for s in sentiments if s == "POSITIVE")
             negative = sum(1 for s in sentiments if s == "NEGATIVE")
             return "Positive" if positive > negative else "Negative" if negative > positive else "Neutral"

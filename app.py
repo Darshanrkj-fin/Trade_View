@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import matplotlib
+matplotlib.use('Agg') # Use non-interactive backend for headless environments
+
 import logging
 import os
 import time
