@@ -14,15 +14,8 @@ from typing import Any
 
 from flask import Flask, g, jsonify, render_template, request
 
-from terminal_app.report_store import delete_report, get_report, list_reports, save_report, update_report_metadata
-from terminal_app.services import (
-    build_analysis_payload,
-    build_benchmark_payload,
-    build_news_payload,
-    build_portfolio_payload,
-    get_frontend_config,
-    get_market_status,
-)
+# NOTE: Heavy imports from terminal_app.services are moved inside routes (Lazy Loading)
+# to ensure near-instant port binding on Render/Heroku.
 from terminal_app.settings import settings
 
 
@@ -38,20 +31,17 @@ def local_browser_url() -> str:
 
 
 def should_auto_open_browser() -> bool:
-    # Hosted environments usually inject PORT; keep auto-open local-only.
     return settings.open_browser and "PORT" not in os.environ
 
 
 def open_browser_later(delay_seconds: float = 1.25) -> None:
     url = local_browser_url()
-
     def _open():
         try:
             webbrowser.open(url)
             logger.info("Opened browser at %s", url)
         except Exception as exc:
             logger.warning("Could not auto-open browser at %s: %s", url, exc)
-
     Timer(delay_seconds, _open).start()
 
 
@@ -81,14 +71,8 @@ def before_request():
 def after_request(response):
     started = getattr(g, "request_started_at", None)
     duration_ms = round((time.perf_counter() - started) * 1000, 2) if started else None
-    log_payload = {
-        "request_id": getattr(g, "request_id", "unknown"),
-        "method": request.method,
-        "path": request.path,
-        "status": response.status_code,
-        "duration_ms": duration_ms,
-    }
-    logger.info("request_complete %s", log_payload)
+    logger.info("request_complete method=%s path=%s status=%s duration_ms=%s", 
+                request.method, request.path, response.status_code, duration_ms)
     diagnostics_buffer.appendleft({
         "level": "info" if response.status_code < 400 else "error",
         "message": f"{request.method} {request.path}",
@@ -108,12 +92,15 @@ def index():
 
 @app.get("/health")
 def health():
-    return api_response(True, "Server is healthy", {"status": "ok"})
+    # Keep this completely pure — no heavy imports.
+    return api_response(True, "Server is healthy", {"status": "ok", "timestamp": time.time()})
 
 
 @app.get("/ready")
 def ready():
+    # Only load basic config on ready check.
     try:
+        from terminal_app.services import get_frontend_config
         get_frontend_config()
         return api_response(True, "Server is ready", {"status": "ready", "debug": settings.debug})
     except Exception as exc:
@@ -122,26 +109,23 @@ def ready():
 
 @app.get("/api/diagnostics")
 def diagnostics_route():
-    return api_response(
-        True,
-        "Loaded diagnostics",
-        {
-            "debug": settings.debug,
-            "host": settings.host,
-            "port": settings.port,
-            "cache_ttls": {
-                "market_status": settings.market_status_ttl,
-                "analysis": settings.analysis_ttl,
-                "news": settings.news_ttl,
-            },
-            "events": list(diagnostics_buffer),
+    return api_response(True, "Loaded diagnostics", {
+        "debug": settings.debug,
+        "host": settings.host,
+        "port": settings.port,
+        "cache_ttls": {
+            "market_status": settings.market_status_ttl,
+            "analysis": settings.analysis_ttl,
+            "news": settings.news_ttl,
         },
-    )
+        "events": list(diagnostics_buffer),
+    })
 
 
 @app.get("/api/config")
 def config_route():
     try:
+        from terminal_app.services import get_frontend_config
         return api_response(True, "Loaded configuration", get_frontend_config())
     except Exception as exc:
         return handle_api_error(exc, "Failed to load configuration", status=500)
@@ -150,6 +134,7 @@ def config_route():
 @app.get("/api/market-status")
 def market_status_route():
     try:
+        from terminal_app.services import get_market_status
         return api_response(True, "Loaded market status", get_market_status())
     except Exception as exc:
         return handle_api_error(exc, "Failed to load market status", status=500)
@@ -159,6 +144,7 @@ def market_status_route():
 def analyze_stock_route():
     payload = request.get_json(silent=True) or {}
     try:
+        from terminal_app.services import build_analysis_payload
         data = build_analysis_payload(payload.get("ticker", ""), payload.get("forecast_days", 30))
         return api_response(True, f"Analysis completed for {data['ticker']}", data)
     except ValueError as exc:
@@ -171,6 +157,7 @@ def analyze_stock_route():
 def benchmark_route():
     payload = request.get_json(silent=True) or {}
     try:
+        from terminal_app.services import build_benchmark_payload
         data = build_benchmark_payload(payload.get("ticker", ""), payload.get("forecast_days", 30))
         return api_response(True, f"Benchmark completed for {data['ticker']}", data)
     except ValueError as exc:
@@ -182,6 +169,7 @@ def benchmark_route():
 @app.post("/api/news-recommendations")
 def news_recommendations_route():
     try:
+        from terminal_app.services import build_news_payload
         return api_response(True, "News recommendation scan completed", build_news_payload())
     except Exception as exc:
         return handle_api_error(exc, "News recommendation scan failed", status=500)
@@ -191,6 +179,7 @@ def news_recommendations_route():
 def portfolio_optimize_route():
     payload = request.get_json(silent=True) or {}
     try:
+        from terminal_app.services import build_portfolio_payload
         data = build_portfolio_payload(payload.get("holdings", []))
         return api_response(True, "Portfolio optimization completed", data)
     except ValueError as exc:
@@ -202,6 +191,7 @@ def portfolio_optimize_route():
 @app.get("/api/reports")
 def reports_route():
     try:
+        from terminal_app.report_store import list_reports
         return api_response(True, "Loaded report history", {"reports": list_reports()})
     except Exception as exc:
         return handle_api_error(exc, "Failed to load report history", status=500)
@@ -210,6 +200,7 @@ def reports_route():
 @app.get("/api/reports/<report_id>")
 def report_detail_route(report_id: str):
     try:
+        from terminal_app.report_store import get_report
         return api_response(True, "Loaded report snapshot", get_report(report_id))
     except FileNotFoundError as exc:
         return api_response(False, str(exc), None, str(exc), status=404)
@@ -229,6 +220,7 @@ def save_report_route():
         return api_response(False, "Report type and payload are required.", None, "Invalid report payload.", status=400)
 
     try:
+        from terminal_app.report_store import save_report
         saved = save_report(report_type, title or f"{report_type.title()} Snapshot", report_payload, metadata=metadata)
         return api_response(True, "Report snapshot saved", saved, status=201)
     except Exception as exc:
@@ -238,6 +230,7 @@ def save_report_route():
 @app.delete("/api/reports/<report_id>")
 def delete_report_route(report_id: str):
     try:
+        from terminal_app.report_store import delete_report
         delete_report(report_id)
         return api_response(True, "Report deleted", {"id": report_id})
     except FileNotFoundError as exc:
@@ -251,6 +244,7 @@ def pin_report_route(report_id: str):
     payload = request.get_json(silent=True) or {}
     pinned = bool(payload.get("pinned", True))
     try:
+        from terminal_app.report_store import update_report_metadata
         updated = update_report_metadata(report_id, {"pinned": pinned})
         return api_response(True, "Report pin state updated", updated)
     except FileNotFoundError as exc:
@@ -269,7 +263,7 @@ if __name__ == "__main__":
     else:
         try:
             from waitress import serve
-
+            logger.info("Starting Waitress production server on %s:%s", settings.host, settings.port)
             serve(app, host=settings.host, port=settings.port)
         except ImportError:
             logger.warning("waitress is not installed; falling back to Flask development server.")
