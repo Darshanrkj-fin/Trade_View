@@ -100,7 +100,7 @@ def build_news_performance_summary(rec_df: pd.DataFrame) -> dict[str, Any]:
 
     def rec_avg(rec_name: str, column: str):
         subset = performance_df.loc[performance_df["recommendation"] == rec_name, column].dropna()
-        return None if subset.empty else round(float(subset.mean()), 2)
+        return 0.0 if subset.empty else round(float(subset.mean()), 2)
 
     return {
         "coverage": int(performance_df["backtest_30_accuracy"].notna().sum()),
