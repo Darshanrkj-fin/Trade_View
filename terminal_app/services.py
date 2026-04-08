@@ -129,7 +129,8 @@ def get_market_status() -> dict[str, Any]:
     for key, meta in indices.items():
         try:
             ticker = yf.Ticker(meta["symbol"])
-            data = ticker.history(period="1d")
+            # Use 5d to ensure we get data even on weekends/holidays
+            data = ticker.history(period="5d")
         except Exception as exc:
             logger.warning("Failed to fetch market status for %s: %s", meta["symbol"], exc)
             data = pd.DataFrame()
@@ -137,6 +138,8 @@ def get_market_status() -> dict[str, Any]:
         if data.empty:
             snapshot[key] = {"label": meta["label"], "available": False}
             continue
+        
+        # Take the most recent data point
         current = float(data["Close"].iloc[-1])
         open_price = float(data["Open"].iloc[-1])
         change_pct = ((current - open_price) / open_price) * 100 if open_price else 0.0
