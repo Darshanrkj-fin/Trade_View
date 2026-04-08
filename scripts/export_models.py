@@ -43,8 +43,8 @@ def build_and_export_lstm():
     logger.info("=== Exporting LSTM Price Model ===")
 
     try:
-        import tensorflow as tf
-        import tf2onnx
+        import tensorflow as tf  # type: ignore
+        import tf2onnx           # type: ignore
         import yfinance as yf
         from sklearn.preprocessing import MinMaxScaler
     except ImportError as e:
@@ -116,8 +116,8 @@ def export_sentiment_model():
     logger.info("=== Exporting DistilBERT Sentiment Model ===")
 
     try:
-        from optimum.onnxruntime import ORTModelForSequenceClassification
-        from transformers import AutoTokenizer
+        from optimum.onnxruntime import ORTModelForSequenceClassification  # type: ignore
+        from transformers import AutoTokenizer                             # type: ignore
     except ImportError as e:
         logger.error(f"Missing dependency: {e}. Install with: pip install optimum[onnxruntime] transformers")
         return False
