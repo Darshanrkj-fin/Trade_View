@@ -207,11 +207,12 @@ def build_ranking_benchmark(tickers, historical_data_dict, current_scores):
 
 def build_ranking_validation(tickers, historical_data_dict, lookback_days=126, forward_days=21, max_windows=6):
     """Compare old vs new ranking by realized forward returns on rolling windows."""
-    valid_series = {
-        ticker: historical_data_dict[ticker]["Close"].dropna().reset_index(drop=True)
-        for ticker in tickers
-        if ticker in historical_data_dict and historical_data_dict[ticker] is not None and not historical_data_dict[ticker].empty
-    }
+    valid_series = {}
+    for ticker in tickers:
+        if ticker in historical_data_dict and historical_data_dict[ticker] is not None and not historical_data_dict[ticker].empty:
+            series = historical_data_dict[ticker]["Close"].dropna()
+            if len(series) >= lookback_days + forward_days:
+                valid_series[ticker] = series.reset_index(drop=True)
     if not valid_series:
         return {
             "windows_evaluated": 0,
