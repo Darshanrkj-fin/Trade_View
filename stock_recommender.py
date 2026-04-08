@@ -164,7 +164,9 @@ def analyze_stock_technical(ticker, forecast_days=30):
 
         # Risk assessment
         risk = assess_risk(historical, predictions)
-        backtest_30 = backtest_strategy(historical, test_days=30) if len(historical) >= 60 else {"profit": 0, "accuracy": 0, "buy_hold": 0}
+        
+        # Skip heavy rolling-window backtest on Recommendation pipeline to prevent Gateway Timeout
+        backtest_30 = {"profit": 0, "accuracy": 0, "buy_hold": 0}
 
         last_price = historical['Close'].iloc[-1]
         pred_direction = "LONG" if predictions[-1] > last_price else "SHORT"

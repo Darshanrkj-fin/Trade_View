@@ -6,7 +6,7 @@
   "nifty50_enabled": true,
   "prediction_range_percent": 20,
   "impact_score_threshold": 55,
-  "max_stocks_to_analyze": 10,
+  "max_stocks_to_analyze": 3,
   "news_sources": ["livemint", "google_news"],
   "use_ml_model": false,
   "newsapi_key": ""
