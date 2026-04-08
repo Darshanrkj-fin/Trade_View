@@ -64,14 +64,6 @@ def _load_tokenizer():
     except ImportError:
         pass
 
-    # Fallback: use transformers tokenizer (tokenization only, no torch needed)
-    try:
-        from transformers import AutoTokenizer
-        _TOKENIZER = AutoTokenizer.from_pretrained(
-            "distilbert-base-uncased-finetuned-sst-2-english"
-        )
-        logger.info("Transformers tokenizer loaded (no torch needed).")
-        return _TOKENIZER
     except Exception as e:
         logger.warning(f"Could not load tokenizer: {e}")
         return None
