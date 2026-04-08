@@ -13,6 +13,10 @@ def clean_number(value: Any) -> Any:
         return float(value)
     if isinstance(value, (np.integer, int)):
         return int(value)
+    if type(value).__name__ in ('bool', 'bool_', 'bool8') and hasattr(value, 'item'):
+        return bool(value.item())
+    elif isinstance(value, np.bool_):
+        return bool(value)
     return value
 
 
