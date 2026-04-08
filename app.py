@@ -58,8 +58,11 @@ def open_browser_later(delay_seconds: float = 1.25) -> None:
     Timer(delay_seconds, _open).start()
 
 
+from terminal_app.serializers import serialize_value
+
 def api_response(ok: bool, message: str, data: Any = None, error: str | None = None, status: int = 200):
-    payload = {"ok": ok, "message": message, "data": data, "error": error}
+    safe_data = serialize_value(data) if data is not None else None
+    payload = {"ok": ok, "message": message, "data": safe_data, "error": error}
     return jsonify(payload), status
 
 
